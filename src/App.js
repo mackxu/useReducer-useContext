@@ -1,5 +1,5 @@
 import { Button, Col, Input, Row, Spin } from 'antd';
-import { useReducer } from 'react'
+import { createContext, useContext, useReducer } from 'react'
 import './App.css';
 import 'antd/dist/antd.css'
 
@@ -20,7 +20,6 @@ const initState = {
 }
 
 const reducer = (state, action) => {
-  console.log('state', state);
   switch (action.type) {
     case LoginTypes.SET_USER:
       return {
@@ -53,19 +52,15 @@ const reducer = (state, action) => {
         errMsg: 'some error find'
       }
     default:
-      break;
+      throw new Error();
   }
 }
 
+const LoginContext = createContext(null)
+
 function App() {
   const [state, dispatch] = useReducer(reducer, initState)
-  const login = () => {
-    dispatch({ type: LoginTypes.LOGIN })
-    setTimeout(() => {
-      const type = Math.random() > 0.5 ? LoginTypes.SUCCESS : LoginTypes.FAIL
-      dispatch({ type })
-    }, 1000)
-  }
+  
   const usernameHander = e => {
     dispatch({
       type: LoginTypes.SET_USER,
@@ -78,22 +73,40 @@ function App() {
       payload: e.target.value
     })
   }
+  console.log('state', state);
   return (
     <div className="App">
       <Spin spinning={state.loading}>
         <Row>
           <Col span={12} offset={6}>
-            <Input value={state.username} onChange={usernameHander} />
-            <Input value={state.password} onChange={passportHander} />
-            <div>
-              <Button type="primary" onClick={login}>Login</Button>
-            </div>
-            <div>{state.errMsg}</div>
+            <LoginContext.Provider value={dispatch}>
+              <Input value={state.username} onChange={usernameHander} />
+              <Input value={state.password} onChange={passportHander} />
+              <div>
+                <Child></Child>
+              </div>
+              <div>{state.errMsg}</div>
+            </LoginContext.Provider>
           </Col>
         </Row>
       </Spin>
     </div>
   );
+}
+
+function Child() {
+  const dispatch = useContext(LoginContext)
+  const login = () => {
+    dispatch({ type: LoginTypes.LOGIN })
+    setTimeout(() => {
+      const type = Math.random() > 0.5 ? LoginTypes.SUCCESS : LoginTypes.FAIL
+      console.log('type: ', type);
+      dispatch({ type })
+    }, 1000)
+  }
+  return (
+    <Button type="primary" onClick={login}>Login</Button>
+  )
 }
 
 export default App;
